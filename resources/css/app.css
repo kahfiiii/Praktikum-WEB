@@ -1,0 +1,126 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-ink: #17254b;
+    --color-ink-muted: #68718a;
+    --color-line: #e5e2dc;
+    --color-line-soft: #dfe1e8;
+    --color-surface: #ffffff;
+    --color-canvas: #fffdf8;
+    --color-canvas-warm: #fbf8f1;
+    --color-gray-fill: #f2f2f4;
+
+    --color-primary: #5568ee;
+    --color-primary-dark: #4252c9;
+    --color-primary-deep: #3949b9;
+    --color-primary-soft: #e9ebff;
+
+    --color-lime: #cde969;
+    --color-lime-soft: #eafaaf;
+    --color-lime-dark: #759b2d;
+    --color-lime-deep: #536e1a;
+    --color-lime-ink: #466419;
+
+    --color-coral: #ff7868;
+    --color-coral-soft: #ffe6e2;
+    --color-coral-ink: #a84439;
+
+    --color-violet: #6741a8;
+    --color-violet-soft: #e9ddff;
+    --color-violet-bg: #eee5ff;
+
+    --radius-chip: 6.5px;
+    --radius-field: 9px;
+    --radius-card: 13px;
+    --radius-panel: 19px;
+    --radius-panel-lg: 23px;
+    --radius-modal: 26px;
+
+    --shadow-card: 0 3px 18px rgba(23, 37, 75, 0.05);
+    --shadow-panel: 0 8px 18px rgba(23, 37, 75, 0.07);
+    --shadow-modal: 0 10px 40px rgba(23, 37, 75, 0.18);
+}
+
+@layer base {
+    body {
+        @apply bg-canvas font-sans text-ink antialiased;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-[13px] px-5 py-3 font-display text-sm font-bold transition;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-[13px] bg-primary px-5 py-3 font-display text-sm font-bold text-white transition hover:bg-primary-dark;
+        box-shadow: 0 4px 0 #3747bb;
+    }
+
+    .btn-primary:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 #3747bb;
+    }
+
+    .btn-lime {
+        @apply inline-flex items-center justify-center gap-2 rounded-[13px] bg-lime px-5 py-3 font-display text-sm font-bold text-lime-ink transition hover:bg-lime-soft;
+    }
+
+    .btn-outline {
+        @apply inline-flex items-center justify-center gap-2 rounded-[13px] border border-line-soft bg-surface px-5 py-3 font-display text-sm font-bold text-ink transition hover:border-primary hover:text-primary;
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-[13px] px-5 py-3 font-display text-sm font-bold text-ink-muted transition hover:text-ink;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center justify-center gap-2 rounded-[13px] border border-coral bg-coral-soft px-5 py-3 font-display text-sm font-bold text-coral-ink transition hover:bg-coral hover:text-white;
+    }
+
+    .card {
+        @apply rounded-[13px] border border-line bg-surface;
+        box-shadow: 0 3px 18px rgba(23, 37, 75, 0.05);
+    }
+
+    .field {
+        @apply w-full rounded-[9px] border border-line-soft bg-surface px-3.5 py-3 text-sm text-ink placeholder:text-ink-muted/70 focus:border-primary focus:outline-none;
+    }
+
+    .label {
+        @apply mb-1.5 block font-display text-xs font-bold text-ink;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-display text-[11px] font-bold;
+    }
+
+    .chip {
+        @apply inline-flex items-center rounded-full border border-line px-3 py-1.5 text-xs font-bold text-ink-muted transition hover:border-primary hover:text-primary;
+    }
+
+    .chip-active {
+        @apply border-primary bg-primary text-white hover:text-white;
+    }
+
+    .nav-link {
+        @apply flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-bold text-ink-muted transition;
+    }
+
+    .nav-link-active {
+        @apply text-primary;
+    }
+}
