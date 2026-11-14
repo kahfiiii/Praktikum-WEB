@@ -148,6 +148,29 @@ class MaterialController extends Controller
         return Storage::disk('local')->download($material->file_path, $filename);
     }
 
+    public function preview(Material $material)
+    {
+        if (empty($material->file_path) || !Storage::disk('local')->exists($material->file_path)) {
+            abort(404);
+        }
+
+        if (strtoupper($material->file_type) !== 'PDF') {
+            abort(404);
+        }
+
+        $filename = $material->original_filename ?: ($material->title . '.pdf');
+        // Sanitize: hapus karakter kutip dan newline
+        $filename = str_replace(['"', "'", "\r", "\n"], '', $filename);
+
+        $path = Storage::disk('local')->path($material->file_path);
+
+        return response()->file($path, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function comment(Request $request, Material $material)
     {
         $data = $request->validate([

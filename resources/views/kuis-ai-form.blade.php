@@ -10,7 +10,7 @@
 <h1 class="mt-3 font-display text-[24px] font-extrabold tracking-[-0.9px] text-ink">Buat kuis dengan AI</h1>
 <p class="mt-1 text-xs text-ink-muted">AI membaca materimu lalu menyusun soal.</p>
 
-<form method="POST" action="{{ route('kuis.ai.generate') }}" class="mt-5 space-y-4" novalidate>
+<form method="POST" action="{{ route('kuis.ai.proses') }}" class="mt-5 space-y-4" novalidate>
     @csrf
 
     <div>
@@ -50,5 +50,5 @@
     </button>
 </form>
 
-<p class="mt-3 text-center text-[11px] text-ink-muted">Soal dihasilkan dari pola materi, tanpa layanan AI berbayar.</p>
+<p class="mt-3 text-center text-[11px] text-ink-muted">Soal dibuat secara otomatis oleh model AI melalui OmniRoute Gateway.</p>
 @endsection

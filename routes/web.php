@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/materi/{material}', [MaterialController::class, 'show'])->name('materi.detail');
     Route::get('/materi/{material}/unduh', [MaterialController::class, 'download'])->name('materi.unduh');
+    Route::get('/materi/{material}/pratinjau', [MaterialController::class, 'preview'])->name('materi.pratinjau');
     Route::get('/materi/{material}/edit', [MaterialController::class, 'edit'])->name('materi.edit');
     Route::put('/materi/{material}', [MaterialController::class, 'update'])->name('materi.update');
     Route::delete('/materi/{material}', [MaterialController::class, 'destroy'])->name('materi.destroy');
@@ -61,6 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/kuis/pilih', [QuizController::class, 'choose'])->name('kuis.pilih');
     Route::get('/kuis/bank-soal', [QuizController::class, 'createManual'])->name('kuis.bank-soal');
     Route::post('/kuis/bank-soal', [QuizController::class, 'storeManual'])->name('kuis.bank-soal.store');
+    Route::post('/kuis/bank-soal/unggah', [QuizController::class, 'uploadBank'])->name('kuis.bank-soal.upload');
+    Route::get('/kuis/bank-soal/template', [QuizController::class, 'downloadTemplate'])->name('kuis.bank-soal.template');
     Route::get('/kuis/ai', [QuizController::class, 'createAi'])->name('kuis.ai');
     Route::post('/kuis/ai/proses', [QuizController::class, 'processing'])->name('kuis.ai.proses');
     Route::post('/kuis/ai', [QuizController::class, 'generate'])->name('kuis.ai.generate');

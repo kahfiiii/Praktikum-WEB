@@ -85,6 +85,157 @@
     </a>
 </div>
 
+{{-- Pratinjau Berkas --}}
+@if ($material->file_path && strtoupper($material->file_type) === 'PDF')
+    <div class="card mt-4 overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+            <p class="text-xs font-bold text-ink">Pratinjau berkas</p>
+            
+            <div id="pdf-controls" class="flex items-center gap-1.5 text-xs">
+                <button type="button" id="pdf-prev" class="btn-outline !p-1.5" title="Halaman sebelumnya">
+                    <x-icon name="chevron-left" class="h-3.5 w-3.5" />
+                </button>
+                <span class="px-1 text-[11px] font-bold text-ink">
+                    <span id="pdf-page-num">1</span> / <span id="pdf-page-count">-</span>
+                </span>
+                <button type="button" id="pdf-next" class="btn-outline !p-1.5" title="Halaman selanjutnya">
+                    <x-icon name="chevron-right" class="h-3.5 w-3.5" />
+                </button>
+                <span class="text-line-soft">|</span>
+                <button type="button" id="pdf-zoom-out" class="btn-outline !p-1.5" title="Perkecil">
+                    <x-icon name="minus" class="h-3.5 w-3.5" />
+                </button>
+                <button type="button" id="pdf-zoom-in" class="btn-outline !p-1.5" title="Perbesar">
+                    <x-icon name="plus" class="h-3.5 w-3.5" />
+                </button>
+            </div>
+
+            <a href="{{ route('materi.pratinjau', $material) }}" target="_blank" rel="noopener" class="btn-outline !px-3 !py-1.5 !text-[11px]">
+                <x-icon name="external-link" class="h-3 w-3" />Buka di tab baru
+            </a>
+        </div>
+
+        {{-- Container Renderer PDF.js (Cross-browser Canvas) --}}
+        <div id="pdf-canvas-container" class="flex h-[50vh] w-full justify-center overflow-auto bg-gray-fill/60 p-4 md:h-[70vh]">
+            <canvas id="pdf-canvas" class="max-w-full rounded-[6px] border border-line bg-white shadow-sm"></canvas>
+        </div>
+
+        {{-- Fallback iframe jika JavaScript dinonaktifkan atau PDF.js gagal --}}
+        <iframe id="pdf-fallback-iframe" src="{{ route('materi.pratinjau', $material) }}" class="hidden h-[50vh] w-full border-0 md:h-[70vh]" loading="lazy" title="Pratinjau {{ $material->title }}"></iframe>
+    </div>
+
+    {{-- Script PDF.js --}}
+    <script src="/vendor/pdfjs/pdf.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const url = "{{ route('materi.pratinjau', $material) }}";
+        if (typeof pdfjsLib === 'undefined') {
+            document.getElementById('pdf-canvas-container').classList.add('hidden');
+            document.getElementById('pdf-controls').classList.add('hidden');
+            document.getElementById('pdf-fallback-iframe').classList.remove('hidden');
+            return;
+        }
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+
+        let pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 1.0,
+            canvas = document.getElementById('pdf-canvas'),
+            ctx = canvas.getContext('2d'),
+            container = document.getElementById('pdf-canvas-container');
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function(page) {
+                // Skala otomatis sesuai lebar layar
+                const containerWidth = container.clientWidth - 40;
+                const unscaledViewport = page.getViewport({ scale: 1 });
+                const baseScale = containerWidth > 0 ? (containerWidth / unscaledViewport.width) : 1;
+                const currentScale = Math.max(0.6, baseScale * scale);
+
+                const viewport = page.getViewport({ scale: currentScale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                const renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            document.getElementById('pdf-page-num').textContent = num;
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        document.getElementById('pdf-prev').addEventListener('click', function() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        });
+
+        document.getElementById('pdf-next').addEventListener('click', function() {
+            if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        });
+
+        document.getElementById('pdf-zoom-in').addEventListener('click', function() {
+            scale = Math.min(2.5, scale + 0.2);
+            queueRenderPage(pageNum);
+        });
+
+        document.getElementById('pdf-zoom-out').addEventListener('click', function() {
+            scale = Math.max(0.5, scale - 0.2);
+            queueRenderPage(pageNum);
+        });
+
+        pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+            renderPage(pageNum);
+        }).catch(function(error) {
+            console.warn('PDF.js gagal memuat, beralih ke iframe fallback:', error);
+            document.getElementById('pdf-canvas-container').classList.add('hidden');
+            document.getElementById('pdf-controls').classList.add('hidden');
+            document.getElementById('pdf-fallback-iframe').classList.remove('hidden');
+        });
+    });
+    </script>
+@elseif (!$material->file_path || strtoupper($material->file_type) !== 'PDF')
+    <div class="card mt-4 p-5">
+        <div class="flex items-start gap-3">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-fill">
+                <x-icon name="file-text" class="h-4 w-4 text-ink-muted" />
+            </span>
+            <div>
+                <p class="text-xs font-bold text-ink">Pratinjau tidak tersedia</p>
+                <p class="mt-1 text-[11px] leading-relaxed text-ink-muted">
+                    Pratinjau hanya tersedia untuk PDF. Silakan unduh berkas untuk melihat isinya.
+                </p>
+            </div>
+        </div>
+    </div>
+@endif
+
 <article class="card mt-4 whitespace-pre-line p-5 text-sm leading-[1.75] text-ink">{{ $material->body }}</article>
 
 <div class="mt-4 flex gap-2">

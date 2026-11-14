@@ -483,4 +483,119 @@ class StudoraBusinessRulesTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    /**
+     * Pratinjau materi: guest redirect, PDF 200, DOCX 404, file tidak ada 404.
+     */
+    public function test_pratinjau_materi_pdf_dan_validasi(): void
+    {
+        Storage::disk('local')->put('materi/preview-test.pdf', '%PDF-1.4 dummy content');
+
+        $materialPdf = Material::create([
+            'course_id' => $this->courseFilkom->id,
+            'user_id' => $this->student1->id,
+            'title' => 'Catatan PDF Preview',
+            'file_path' => 'materi/preview-test.pdf',
+            'original_filename' => 'catatan-preview.pdf',
+            'file_type' => 'PDF',
+            'faculty' => 'Fakultas Ilmu Komputer',
+        ]);
+
+        $materialDocx = Material::create([
+            'course_id' => $this->courseFilkom->id,
+            'user_id' => $this->student1->id,
+            'title' => 'Catatan DOCX Preview',
+            'file_path' => 'materi/preview-test.docx',
+            'original_filename' => 'catatan-preview.docx',
+            'file_type' => 'DOCX',
+            'faculty' => 'Fakultas Ilmu Komputer',
+        ]);
+
+        $materialNoFile = Material::create([
+            'course_id' => $this->courseFilkom->id,
+            'user_id' => $this->student1->id,
+            'title' => 'Catatan Tanpa File',
+            'file_path' => 'materi/tidak-ada.pdf',
+            'original_filename' => 'tidak-ada.pdf',
+            'file_type' => 'PDF',
+            'faculty' => 'Fakultas Ilmu Komputer',
+        ]);
+
+        // Guest diarahkan ke login
+        $this->get(route('materi.pratinjau', $materialPdf))
+            ->assertRedirect(route('masuk'));
+
+        // User login mendapat 200 dan Content-Type application/pdf untuk PDF
+        $response = $this->actingAs($this->student1)
+            ->get(route('materi.pratinjau', $materialPdf));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        // DOCX mendapat 404
+        $this->actingAs($this->student1)
+            ->get(route('materi.pratinjau', $materialDocx))
+            ->assertStatus(404);
+
+        // File tidak ada di disk mendapat 404
+        $this->actingAs($this->student1)
+            ->get(route('materi.pratinjau', $materialNoFile))
+            ->assertStatus(404);
+    }
+
+    /**
+     * Verifikasi batasan akses hak role: student, moderator, admin.
+     */
+    public function test_role_permissions_and_boundaries(): void
+    {
+        // 1. Student mencoba akses area moderasi dan admin -> 403
+        $this->actingAs($this->student1)
+            ->get(route('moderasi.laporan'))
+            ->assertStatus(403);
+
+        $this->actingAs($this->student1)
+            ->get(route('admin.dashboard'))
+            ->assertStatus(403);
+
+        // 2. Moderator boleh akses area moderasi -> 200, tapi ditolak ke admin -> 403
+        $this->actingAs($this->moderatorFilkom)
+            ->get(route('moderasi.laporan'))
+            ->assertStatus(200);
+
+        $this->actingAs($this->moderatorFilkom)
+            ->get(route('admin.dashboard'))
+            ->assertStatus(403);
+
+        // 3. Admin memiliki akses penuh ke area admin dan moderasi -> 200
+        $this->actingAs($this->admin)
+            ->get(route('moderasi.laporan'))
+            ->assertStatus(200);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.dashboard'))
+            ->assertStatus(200);
+
+        // 4. Admin dapat mengubah role student menjadi moderator
+        $this->actingAs($this->admin)
+            ->post(route('admin.moderator.toggle', $this->student1))
+            ->assertRedirect();
+
+        $this->assertEquals('moderator', $this->student1->fresh()->role);
+
+        // 5. Admin tidak dapat mengubah role sesama admin lewat toggle
+        $admin2 = User::create([
+            'name' => 'Admin 2',
+            'email' => 'admin2@student.ub.ac.id',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+            'faculty' => 'Fakultas Ilmu Komputer',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.moderator.toggle', $admin2))
+            ->assertSessionHasErrors('user');
+
+        $this->assertEquals('admin', $admin2->fresh()->role);
+    }
 }
